@@ -68,9 +68,9 @@ class WobSocketConsumer(AsyncJsonWebsocketConsumer):
 
     # endregion
 
-    # region Workstation server events handlers
+    # region Server events handlers
 
-    async def workstation_power_off(self, event):
-        await self.send_json({'type': 'power_off'})
+    async def workstation(self, event):
+        await self.send_json(event['message'])
 
     # endregion
