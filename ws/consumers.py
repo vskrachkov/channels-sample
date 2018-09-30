@@ -13,8 +13,6 @@ class WobSocketConsumer(AsyncJsonWebsocketConsumer):
         super().__init__(*args, **kwargs)
         self.dispatcher = Dispatcher(self)
 
-    # region WebSocket communication methods
-
     async def connect(self):
         await self.accept()
 
@@ -38,19 +36,5 @@ class WobSocketConsumer(AsyncJsonWebsocketConsumer):
     async def disconnect(self, code):
         pass
 
-    # endregion
-
-    # region Common events
-
-    @staticmethod
-    async def unknown_event_type(content):
-        log.info(f'Unknown event: {content}')
-
-    # endregion
-
-    # region Server events handlers
-
-    async def workstation(self, event):
+    async def server_event(self, event):
         await self.send_json(event['message'])
-
-    # endregion
