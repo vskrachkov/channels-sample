@@ -3,10 +3,16 @@ import logging
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.conf import settings
 
+from ws.dispatcher import Dispatcher
+
 log = logging.getLogger('channels')
 
 
 class WobSocketConsumer(AsyncJsonWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dispatcher = Dispatcher(self)
+
     # region WebSocket communication methods
 
     async def connect(self):
@@ -27,19 +33,7 @@ class WobSocketConsumer(AsyncJsonWebsocketConsumer):
                 )
 
     async def receive_json(self, content, **kwargs):
-        event_type = content.get('type')
-        assert event_type, '`type` is required'
-        assert not event_type.startswith('_'), \
-            '`type` cannot starts with underscore'
-
-        event_type = event_type.replace('.', '_')
-        handler_name = f'on_{event_type}'
-        handler = getattr(self, handler_name, None)
-
-        if handler:
-            await handler(content)
-        else:
-            await self.unknown_event_type(content)
+        await self.dispatcher.dispatch(content)
 
     async def disconnect(self, code):
         pass
@@ -51,20 +45,6 @@ class WobSocketConsumer(AsyncJsonWebsocketConsumer):
     @staticmethod
     async def unknown_event_type(content):
         log.info(f'Unknown event: {content}')
-
-    # endregion
-
-    # region Workstation websocket events handlers
-
-    async def on_workstation_reg_conn(self, content):
-        workstation_mac = content.get('mac')
-        if not workstation_mac:
-            await self.close(); return
-
-        await self.channel_layer.group_add(
-            workstation_mac.replace(':', '-'),
-            self.channel_name
-        )
 
     # endregion
 
